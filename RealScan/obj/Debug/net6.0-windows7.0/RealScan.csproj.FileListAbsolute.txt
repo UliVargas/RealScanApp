@@ -1,0 +1,17 @@
+C:\Users\YoContigo\Desktop\RealScan\Bin\x64\net6.0-windows7.0\RealScan.exe
+C:\Users\YoContigo\Desktop\RealScan\Bin\x64\net6.0-windows7.0\RealScan.deps.json
+C:\Users\YoContigo\Desktop\RealScan\Bin\x64\net6.0-windows7.0\RealScan.runtimeconfig.json
+C:\Users\YoContigo\Desktop\RealScan\Bin\x64\net6.0-windows7.0\RealScan.dll
+C:\Users\YoContigo\Desktop\RealScan\Bin\x64\net6.0-windows7.0\RealScan.pdb
+C:\Users\YoContigo\Desktop\RealScan\RealScan\obj\Debug\net6.0-windows7.0\RealScan.Properties.Resources.resources
+C:\Users\YoContigo\Desktop\RealScan\RealScan\obj\Debug\net6.0-windows7.0\RealScan.csproj.GenerateResource.cache
+C:\Users\YoContigo\Desktop\RealScan\RealScan\obj\Debug\net6.0-windows7.0\RealScan.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\YoContigo\Desktop\RealScan\RealScan\obj\Debug\net6.0-windows7.0\RealScan.csproj.CoreCompileInputs.cache
+C:\Users\YoContigo\Desktop\RealScan\RealScan\obj\Debug\net6.0-windows7.0\RealScan.dll
+C:\Users\YoContigo\Desktop\RealScan\RealScan\obj\Debug\net6.0-windows7.0\refint\RealScan.dll
+C:\Users\YoContigo\Desktop\RealScan\RealScan\obj\Debug\net6.0-windows7.0\RealScan.pdb
+C:\Users\YoContigo\Desktop\RealScan\RealScan\obj\Debug\net6.0-windows7.0\RealScan.genruntimeconfig.cache
+C:\Users\YoContigo\Desktop\RealScan\RealScan\obj\Debug\net6.0-windows7.0\ref\RealScan.dll
+C:\Users\YoContigo\Desktop\RealScan\RealScan\obj\Debug\net6.0-windows7.0\RealScan.csproj.AssemblyReference.cache
+C:\Users\YoContigo\Desktop\RealScan\RealScan\obj\Debug\net6.0-windows7.0\RealScanUICSharp.MainForm.resources
+C:\Users\YoContigo\Desktop\RealScan\RealScan\obj\Debug\net6.0-windows7.0\RealScan.csproj.Up2Date

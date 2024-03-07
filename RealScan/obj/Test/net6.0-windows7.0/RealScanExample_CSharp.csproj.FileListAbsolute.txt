@@ -1,0 +1,15 @@
+C:\Users\YoContigo\Desktop\RealScanExample\Bin\x64\net6.0-windows7.0\RealScanExample_CSharp.exe
+C:\Users\YoContigo\Desktop\RealScanExample\Bin\x64\net6.0-windows7.0\RealScanExample_CSharp.deps.json
+C:\Users\YoContigo\Desktop\RealScanExample\Bin\x64\net6.0-windows7.0\RealScanExample_CSharp.runtimeconfig.json
+C:\Users\YoContigo\Desktop\RealScanExample\Bin\x64\net6.0-windows7.0\RealScanExample_CSharp.dll
+C:\Users\YoContigo\Desktop\RealScanExample\Bin\x64\net6.0-windows7.0\RealScanExample_CSharp.pdb
+C:\Users\YoContigo\Desktop\RealScanExample\RealScanExample_CSharp\obj\Test\net6.0-windows7.0\RealScanUICSharp.Form1.resources
+C:\Users\YoContigo\Desktop\RealScanExample\RealScanExample_CSharp\obj\Test\net6.0-windows7.0\RealScanExample_CSharp.Properties.Resources.resources
+C:\Users\YoContigo\Desktop\RealScanExample\RealScanExample_CSharp\obj\Test\net6.0-windows7.0\RealScanExample_CSharp.csproj.GenerateResource.cache
+C:\Users\YoContigo\Desktop\RealScanExample\RealScanExample_CSharp\obj\Test\net6.0-windows7.0\RealScanExample_CSharp.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\YoContigo\Desktop\RealScanExample\RealScanExample_CSharp\obj\Test\net6.0-windows7.0\RealScanExample_CSharp.csproj.CoreCompileInputs.cache
+C:\Users\YoContigo\Desktop\RealScanExample\RealScanExample_CSharp\obj\Test\net6.0-windows7.0\RealScanExample_CSharp.dll
+C:\Users\YoContigo\Desktop\RealScanExample\RealScanExample_CSharp\obj\Test\net6.0-windows7.0\refint\RealScanExample_CSharp.dll
+C:\Users\YoContigo\Desktop\RealScanExample\RealScanExample_CSharp\obj\Test\net6.0-windows7.0\RealScanExample_CSharp.pdb
+C:\Users\YoContigo\Desktop\RealScanExample\RealScanExample_CSharp\obj\Test\net6.0-windows7.0\RealScanExample_CSharp.genruntimeconfig.cache
+C:\Users\YoContigo\Desktop\RealScanExample\RealScanExample_CSharp\obj\Test\net6.0-windows7.0\ref\RealScanExample_CSharp.dll
