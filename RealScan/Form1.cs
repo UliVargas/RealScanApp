@@ -118,7 +118,9 @@ namespace RealScanUICSharp
         public MainForm()
         {
             InitializeComponent();
-            this.Text = "RealScan";
+            this.Text = "Escaner Fiscalia Web";
+            Icon icon = Icon.ExtractAssociatedIcon("fgebc.ico");
+            this.Icon = icon;
             // InitializeWebSocketServer();
 
             this.Load += new EventHandler(MainForm_Load);
@@ -418,9 +420,6 @@ namespace RealScanUICSharp
                 }
             }
 
-            AllocateConsole();
-            Console.WriteLine(CallbackSelectedIndex);
-
             if ((CallbackSelectedIndex == (int)callbackMode.saveNseg))
             {
                 int nMinFinger = 4;
@@ -540,9 +539,6 @@ namespace RealScanUICSharp
         {
             
             getBlobCapture(imageData, imageWidth, imageHeight, ref blob);
-
-            AllocateConsole();
-            Console.WriteLine(blob[0]);
 
             SaveFileDialog saveDialog = new SaveFileDialog();
             saveDialog.InitialDirectory = ".:\\";
