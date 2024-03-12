@@ -16,3 +16,4 @@ C:\Users\YoContigo\Desktop\RealScan\RealScan\obj\Debug\net6.0-windows7.0\RealSca
 C:\Users\YoContigo\Desktop\RealScan\RealScan\obj\Debug\net6.0-windows7.0\RealScanUICSharp.MainForm.resources
 C:\Users\YoContigo\Desktop\RealScan\RealScan\obj\Debug\net6.0-windows7.0\RealScan.csproj.Up2Date
 C:\Users\YoContigo\Desktop\RealScan\RealScan\obj\Debug\net6.0-windows7.0\RealScan.sourcelink.json
+C:\Users\YoContigo\Desktop\RealScan\RealScan\obj\Debug\net6.0-windows7.0\RealScan.EsperaForm.resources

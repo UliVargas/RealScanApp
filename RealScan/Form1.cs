@@ -1,13 +1,11 @@
-﻿using System;
+﻿using RealScan;
+using System;
 using System.Drawing;
-using System.Text;
-using System.Windows.Forms;
-using System.Runtime.InteropServices;
 using System.Drawing.Imaging;
-using System.IO;
-using RealScan;
+using System.Runtime.InteropServices;
 using System.Threading;
-using Npgsql;
+using System.Threading.Tasks;
+using System.Windows.Forms;
 namespace RealScanUICSharp
 {
     public partial class MainForm : Form
@@ -93,7 +91,7 @@ namespace RealScanUICSharp
 
         public string ImageSize = "";
 
-        public int DeviceListSelectedIndex = 0;
+        public int DeviceListSelectedIndex = -1;
 
         [DllImport("kernel32.dll")]
         public static extern bool AllocConsole();
@@ -113,15 +111,15 @@ namespace RealScanUICSharp
             FreeConsole();
         }
 
-        // WebSocketServerMain webSocketServer = new WebSocketServerMain();
+        WebSocketServerMain webSocketServer;
 
         public MainForm()
         {
             InitializeComponent();
+            StartWebSocketServer();
             this.Text = "Escaner Fiscalia Web";
             Icon icon = Icon.ExtractAssociatedIcon("fgebc.ico");
             this.Icon = icon;
-            // InitializeWebSocketServer();
 
             this.Load += new EventHandler(MainForm_Load);
             this.FormClosed += Exit_DeviceHandler;
@@ -142,17 +140,17 @@ namespace RealScanUICSharp
 
         private void MainForm_Load(object sender, EventArgs e)
         {
-            Ininit_SDK();
+            InitSDKAndDevice();
         }
-        private void InitializeWebSocketServer()
+        private void StartWebSocketServer()
         {
-            // webSocketServer.Start();
+            Task.Run(() => new WebSocketServerMain(this));
         }
 
-        private void Ininit_SDK()
+        private void Init_SDK()
         {
             int numOfDevice = 0;
-            RSSDKInfo sdkInfo = new RSSDKInfo();
+            _ = new RSSDKInfo();
 
             m_result = RealScanSDK.RS_InitSDK(null, 0, ref numOfDevice);
             if (m_result != RealScanSDK.RS_SUCCESS)
@@ -169,48 +167,109 @@ namespace RealScanUICSharp
             {
                 DeviceListSelectedIndex = 0;
             }
-
-            Init_Device();
-
         }
 
-        private void Init_Device()
+        private int CheckDevicesAvailable()
         {
-            RSDeviceInfo deviceInfo = new RSDeviceInfo();
-
-            m_result = RealScanSDK.RS_InitDevice(DeviceListSelectedIndex, ref deviceHandle);
-            if (m_result != RealScanSDK.RS_SUCCESS)
+            int numOfDevice = 0;
+            int result = RealScanSDK.RS_InitSDK(null, 0, ref numOfDevice);
+            if (result == RealScanSDK.RS_SUCCESS && numOfDevice > 0)
             {
-                RealScanSDK.RS_GetErrString(m_result, ref m_errorMsg);
-                MsgPanel.Text = m_errorMsg;
-                return;
+                return numOfDevice;
             }
+            return 0;
+        }
 
-            AutoCalibrate = true;
+        private async void InitSDKAndDevice()
+        {
+            Init_SDK();
 
-            m_prevStopped = true;
-
-
-            m_result = RealScanSDK.RS_GetDeviceInfo(deviceHandle, ref deviceInfo);
-            if (m_result != RealScanSDK.RS_SUCCESS)
+            using (var esperaForm = new EsperaForm())
             {
-                RealScanSDK.RS_GetErrString(m_result, ref m_errorMsg);
-                MsgPanel.Text = m_errorMsg;
-                return;
+                esperaForm.Show();
+                esperaForm.Invoke(new Action(() => esperaForm.Text = "Connectando..."));
+                esperaForm.UpdateStatusText("Por favor, espera mientras se establece la conexión con el dispositivo...");
+
+                bool deviceConnected = false;
+                await Task.Run(async () =>
+                {
+                    while (!deviceConnected)
+                    {
+                        int numOfDevice = CheckDevicesAvailable();
+
+                        if (numOfDevice > 0)
+                        {
+                            deviceConnected = true;
+                            DeviceListSelectedIndex = 0;
+                        }
+                        else
+                        {
+                            esperaForm.Invoke(new Action(() => esperaForm.Text = "Esperando dispositivo..."));
+                            esperaForm.UpdateStatusText("No se detecta ningún dispositivo. Por favor, conecta un dispositivo...");
+                            await Task.Delay(1000);
+                        }
+                    }
+                });
+
+                esperaForm.Invoke(new Action(() => esperaForm.Text = "Connectando..."));
+                esperaForm.UpdateStatusText("Dispositivo conectado. Finalizando la inicialización...");
+
+                await Init_Device();
+
+                esperaForm.Invoke((MethodInvoker)delegate
+                {
+                    esperaForm.Close();
+                });
             }
+        }
 
-            DeviceInfo.Text = System.Text.Encoding.ASCII.GetString(deviceInfo.productName);
 
-            InitDeviceEnabled = false;
-            ExitDeviceEnabled = true;
-
-            if (deviceInfo.deviceType != RealScanSDK.RS_DEVICE_REALSCAN_F)
+        private async Task Init_Device()
+        {
+            await Task.Run(() =>
             {
-                ResetLCDEnable = false;
-                DisplayLCDEnable = false;
-            }
+                RSDeviceInfo deviceInfo = new RSDeviceInfo();
 
-            MsgPanel.Text = "El dispositivo se ha inicializado correctamente";
+                m_result = RealScanSDK.RS_InitDevice(DeviceListSelectedIndex, ref deviceHandle);
+                if (m_result != RealScanSDK.RS_SUCCESS)
+                {
+                    RealScanSDK.RS_GetErrString(m_result, ref m_errorMsg);
+                    this.Invoke(new Action(() =>
+                    {
+                        MsgPanel.Text = m_errorMsg;
+                    }));
+                    return;
+                }
+
+                AutoCalibrate = true;
+                m_prevStopped = true;
+
+                m_result = RealScanSDK.RS_GetDeviceInfo(deviceHandle, ref deviceInfo);
+                if (m_result != RealScanSDK.RS_SUCCESS)
+                {
+                    RealScanSDK.RS_GetErrString(m_result, ref m_errorMsg);
+                    this.Invoke(new Action(() =>
+                    {
+                        MsgPanel.Text = m_errorMsg;
+                    }));
+                    return;
+                }
+
+                this.Invoke(new Action(() =>
+                {
+                    DeviceInfo.Text = System.Text.Encoding.ASCII.GetString(deviceInfo.productName);
+                    InitDeviceEnabled = false;
+                    ExitDeviceEnabled = true;
+
+                    if (deviceInfo.deviceType != RealScanSDK.RS_DEVICE_REALSCAN_F)
+                    {
+                        ResetLCDEnable = false;
+                        DisplayLCDEnable = false;
+                    }
+
+                    MsgPanel.Text = "El dispositivo se ha inicializado correctamente";
+                }));
+            });
         }
 
         private void Exit_DeviceHandler(object sender, FormClosedEventArgs e)
@@ -248,6 +307,15 @@ namespace RealScanUICSharp
             DisplayLCDEnable = true;
 
             MsgPanel.Text = "El dispisitivo se desconectó correctamente";
+        }
+
+        public void ChangeCaptureMode(int modeIndex)
+        {
+            if (modeIndex >= 0 && modeIndex < CaptureMode.Items.Count)
+            {
+                CaptureMode.SelectedIndex = modeIndex;
+                CaptureMode_SelectedIndexChanged(null, null);
+            }
         }
 
         private void CaptureMode_SelectedIndexChanged(object sender, EventArgs e)
@@ -359,166 +427,6 @@ namespace RealScanUICSharp
             log("previewCallbackInt done...");
         }
 
-        private int GetSlapType(int nCaptureMode, ref int pnSlapType)
-        {
-            switch (nCaptureMode)
-            {
-                case RealScanSDK.RS_CAPTURE_FLAT_TWO_FINGERS:
-                    break;
-                case RealScanSDK.RS_CAPTURE_FLAT_LEFT_FOUR_FINGERS:
-                    break;
-                case RealScanSDK.RS_CAPTURE_FLAT_RIGHT_FOUR_FINGERS:
-                    break;
-                default:
-                    MsgPanel.Text = "Cannot segment in this mode";
-                    return -1;
-            }
-            return 0;
-        }
-
-        private void captureCallbackInt(int errorCode, IntPtr imageData, int imageWidth, int imageHeight)
-        {
-            int nRetVal = RealScanSDK.RS_ERR_UNKNOWN;
-            m_result = errorCode;
-            if (errorCode != RealScanSDK.RS_SUCCESS && errorCode != RealScanSDK.RS_WRN_TOO_POOR_QUALITY && errorCode != RealScanSDK.RS_WRN_BAD_SCAN
-                && errorCode != RealScanSDK.RS_ERR_SEGMENT_FEWER_FINGER && errorCode != RealScanSDK.RS_ERR_SEGMENT_WRONG_HAND)
-            {
-                RealScanSDK.RS_GetErrString(errorCode, ref m_errorMsg);
-                MsgPanel.Text = m_errorMsg;
-                StartCapture.Enabled = true;
-                StopCapture.Enabled = false;
-                return;
-            }
-
-            int nLFDLevel = 0;
-            RealScanSDK.RS_GetLFDLevel(deviceHandle, ref nLFDLevel);
-            if (nLFDLevel == 0)
-            {
-                MsgPanel.Text = "La imagen se capturó correctamente";
-            }
-            else
-            {
-                RSLFDResult sLFDResult = new RSLFDResult();
-                nRetVal = RealScanSDK.RS_GetLFDResult(deviceHandle, ref sLFDResult);
-                if (nRetVal != RealScanSDK.RS_SUCCESS)
-                {
-                    MsgPanel.Text = "La imagen se capturó correctamente";
-                }
-                else
-                {
-                    int nFinalLFDResult = RealScanSDK.RS_LFD_LIVE;
-                    String strScores = "";
-                    for (int i = 0; i < sLFDResult.nNumofFinger; i++)
-                    {
-                        String strScore = "";
-                        if (sLFDResult.arsLFDInfo[i].nResult == RealScanSDK.RS_LFD_FAKE) nFinalLFDResult = RealScanSDK.RS_LFD_FAKE;
-                        strScore = String.Format("{0}({1}) ", sLFDResult.arsLFDInfo[i].nResult == RealScanSDK.RS_LFD_LIVE ? "L" : "F",
-                            sLFDResult.arsLFDInfo[i].nScore);
-                        strScores += strScore;
-                    }
-                    MsgPanel.Text = String.Format("{0} {1}", nFinalLFDResult == RealScanSDK.RS_LFD_LIVE ? "[LIVE FINGER]" : "[FAKE FINGER]", strScores);
-                }
-            }
-
-            if ((CallbackSelectedIndex == (int)callbackMode.saveNseg))
-            {
-                int nMinFinger = 4;
-                nRetVal = RealScanSDK.RS_GetMinimumFinger(deviceHandle, ref nMinFinger);
-                if (nMinFinger == 4)
-                {
-                    int numOfFingers = 0;
-                    IntPtr[] ImageBuffer = new IntPtr[4];
-                    int[] ImageWidth = new int[4];
-                    int[] ImageHeight = new int[4];
-                    RSSlapInfoArray slapInfoA = new RSSlapInfoArray();
-
-                    SegmentCaptureProcess(imageData, imageWidth, imageHeight, deviceHandle, ref slapInfoA, ref numOfFingers, ref ImageBuffer, ref ImageWidth, ref ImageHeight);
-
-                    if (CallbackSelectedIndex == (int)callbackMode.saveNseg)
-                    {
-                        SegmentSaveImageCaptureProcess(imageData, imageWidth, imageHeight, numOfFingers, slapInfoA, ImageBuffer, ImageWidth, ImageHeight);
-                    }
-                    for (int i = 0; i < 4; i++)
-                    {
-                        if (ImageBuffer[i] != (IntPtr)0)
-                        {
-                            RealScanSDK.RS_FreeImageData(ImageBuffer[i]);
-                        }
-                    }
-                }
-                else
-                {
-                    int nCaptureMode = 0;
-                    int nCaptureOption = 0;
-                    nRetVal = RealScanSDK.RS_GetCaptureMode(deviceHandle, ref nCaptureMode, ref nCaptureOption);
-                    if (nRetVal != RealScanSDK.RS_SUCCESS) return;
-
-                    int nSlapType = 0;
-                    nRetVal = GetSlapType(nCaptureMode, ref nSlapType);
-                    if (nRetVal == RealScanSDK.RS_SUCCESS)
-                    {
-                        RealScanSDK.RSSegmentInfo sSegmentInfo = new RealScanSDK.RSSegmentInfo();
-                        sSegmentInfo.arsFingerInfo = new RealScanSDK.RSFingerInfo[4];
-                        for (int i = 0; i < 4; i++)
-                        {
-                            sSegmentInfo.arsFingerInfo[i].arsPoint = new RSPoint[4];
-                            sSegmentInfo.arsFingerInfo[i].nWidth = 1000;
-                            sSegmentInfo.arsFingerInfo[i].nHeight = 1000;
-                        }
-
-                        byte[] pbyFinImg1 = new byte[1000 * 1000];
-                        byte[] pbyFinImg2 = new byte[1000 * 1000];
-                        byte[] pbyFinImg3 = new byte[1000 * 1000];
-                        byte[] pbyFinImg4 = new byte[1000 * 1000];
-
-                        RealScanSDK.RSMissingInfo sMissingInfo = new RealScanSDK.RSMissingInfo();
-                        if (nSlapType == RealScanSDK.RS_SLAP_LEFT_FOUR)
-                        {
-                            if (leftFingers.GetItemChecked(0)) sMissingInfo.nFirstfinger = 1;
-                            if (leftFingers.GetItemChecked(1)) sMissingInfo.nSecondfinger = 1;
-                            if (leftFingers.GetItemChecked(2)) sMissingInfo.nThirdfinger = 1;
-                            if (leftFingers.GetItemChecked(3)) sMissingInfo.nFourthfinger = 1;
-                        }
-                        else
-                        {
-                            if (rightFingers.GetItemChecked(0)) sMissingInfo.nFirstfinger = 1;
-                            if (rightFingers.GetItemChecked(1)) sMissingInfo.nSecondfinger = 1;
-                            if (rightFingers.GetItemChecked(2)) sMissingInfo.nThirdfinger = 1;
-                            if (rightFingers.GetItemChecked(3)) sMissingInfo.nFourthfinger = 1;
-                        }
-                        nRetVal = RealScanSDK.RS_SegmentExMissingFinger(imageData, imageWidth, imageHeight, nSlapType, ref sSegmentInfo,
-                        pbyFinImg1, pbyFinImg3, pbyFinImg3, pbyFinImg4, sMissingInfo);
-
-                        if (nRetVal == RealScanSDK.RS_SUCCESS)
-                        {
-                            MsgPanel.Text = "Quality:";
-                            for (int i = 0; i < sSegmentInfo.nFingerCnt; i++)
-                            {
-                                MsgPanel.Text += "[" + sSegmentInfo.arsFingerInfo[i].nFingerType + ":" + sSegmentInfo.arsFingerInfo[i].nImageQuality + "] ";
-                            }
-                        }
-                        else
-                        {
-                            RealScanSDK.RS_GetErrString(m_result, ref m_errorMsg);
-                            MsgPanel.Text = m_errorMsg;
-                        }
-                    }
-                }
-            }
-
-            StartCapture.Enabled = true;
-            StopCapture.Enabled = false;
-        }
-
-        private void captureDataCallback(int deviceHandle, int errorCode, IntPtr imageData, int imageWidth, int imageHeight)
-        {
-            if (imageData != null)
-            {
-                RSRawCaptureCallback callback = new RSRawCaptureCallback(captureCallbackInt);
-                Invoke(callback, errorCode, imageData, imageWidth, imageHeight);
-            }
-        }
-
         private void previewDataCallback(int deviceHandle, int errorCode, IntPtr imageData, int imageWidth, int imageHeight)
         {
             log("previewDataCallback called....");
@@ -537,7 +445,7 @@ namespace RealScanUICSharp
 
         private void SegmentSaveImageCaptureProcess(IntPtr imageData, int imageWidth, int imageHeight, int numOfFingers, RSSlapInfoArray slapInfo, IntPtr[] ImageBuffer, int[] ImageWidth, int[] ImageHeight)
         {
-            
+
             getBlobCapture(imageData, imageWidth, imageHeight, ref blob);
 
             SaveFileDialog saveDialog = new SaveFileDialog();
@@ -558,10 +466,10 @@ namespace RealScanUICSharp
                 for (int i = 0; i < numOfFingers; i++)
                 {
 
-                    
-                       RealScanSDK.RS_SaveBitmap(ImageBuffer[i], m_nCustomSegWidth, m_nCustomSegHeight, saveDialog.FileName + "_" + slapInfo.RSSlapInfoA[i].fingerType + ".bmp");
-                    
-                       RealScanSDK.RS_SaveBitmap(ImageBuffer[i], ImageWidth[i], ImageHeight[i], saveDialog.FileName + "_" + slapInfo.RSSlapInfoA[i].fingerType + ".bmp");
+
+                    RealScanSDK.RS_SaveBitmap(ImageBuffer[i], m_nCustomSegWidth, m_nCustomSegHeight, saveDialog.FileName + "_" + slapInfo.RSSlapInfoA[i].fingerType + ".bmp");
+
+                    RealScanSDK.RS_SaveBitmap(ImageBuffer[i], ImageWidth[i], ImageHeight[i], saveDialog.FileName + "_" + slapInfo.RSSlapInfoA[i].fingerType + ".bmp");
                     if (m_result != RealScanSDK.RS_SUCCESS)
                     {
                         RealScanSDK.RS_GetErrString(m_result, ref m_errorMsg);
@@ -569,6 +477,7 @@ namespace RealScanUICSharp
                     }
                 }
             }
+            ModeLEDOff();
             saveDialog.Dispose();
         }
 
@@ -579,48 +488,6 @@ namespace RealScanUICSharp
             Marshal.Copy(imageData, prevImageData, 0, imageWidth * imageHeight);
             blob = prevImageData;
         }
-
-        public enum ImageFormat
-        {
-            Unknown,
-            JPEG,
-            PNG,
-            GIF,
-            BMP,
-            TIFF
-        }
-
-        public static ImageFormat GetImageFormat(byte[] imageData)
-        {
-            // JPEG
-            if (imageData.Length >= 3 && imageData[0] == 0xFF && imageData[1] == 0xD8 && imageData[2] == 0xFF)
-                return ImageFormat.JPEG;
-
-            // PNG
-            if (imageData.Length >= 8 && imageData[0] == 0x89 && imageData[1] == 0x50 && imageData[2] == 0x4E && imageData[3] == 0x47 &&
-                imageData[4] == 0x0D && imageData[5] == 0x0A && imageData[6] == 0x1A && imageData[7] == 0x0A)
-                return ImageFormat.PNG;
-
-            // GIF
-            if (imageData.Length >= 6 && imageData[0] == 0x47 && imageData[1] == 0x49 && imageData[2] == 0x46 && imageData[3] == 0x38)
-                return ImageFormat.GIF;
-
-            // BMP
-            if (imageData.Length >= 2 && imageData[0] == 0x42 && imageData[1] == 0x4D)
-                return ImageFormat.BMP;
-
-            // TIFF (little endian)
-            if (imageData.Length >= 4 && imageData[0] == 0x49 && imageData[1] == 0x49 && imageData[2] == 0x2A && imageData[3] == 0x00)
-                return ImageFormat.TIFF;
-
-            // TIFF (big endian)
-            if (imageData.Length >= 4 && imageData[0] == 0x4D && imageData[1] == 0x4D && imageData[2] == 0x00 && imageData[3] == 0x2A)
-                return ImageFormat.TIFF;
-
-            // Desconocido
-            return ImageFormat.Unknown;
-        }
-
 
         private void SegmentCaptureProcess(IntPtr imageData, int imageWidth, int imageHeight, int deviceHandle, ref RSSlapInfoArray slapInfo,
                                            ref int numOfFingers, ref IntPtr[] ImageBuffer, ref int[] ImageWidth, ref int[] ImageHeight)
@@ -663,6 +530,15 @@ namespace RealScanUICSharp
                 MsgPanel.Text = m_errorMsg;
             }
 
+            for (int i = 0; i < leftFingers.Items.Count; i++)
+            {
+                if (leftFingers.GetItemChecked(i))
+                {
+                    AllocateConsole();
+                    Console.WriteLine($"Ítem en índice {i} está marcado.");
+                }
+            }
+
             switch (captureMode)
             {
                 case RealScanSDK.RS_CAPTURE_FLAT_TWO_FINGERS:
@@ -691,9 +567,9 @@ namespace RealScanUICSharp
                     return;
             }
 
-             m_result = RealScanSDK.RS_Segment4(imageData, imageWidth, imageHeight, slapType, ref numOfFingers, ref slapInfoArray, ref ImageBuffer[0], ref ImageWidth[0],
-                                                 ref ImageHeight[0], ref ImageBuffer[1], ref ImageWidth[1], ref ImageHeight[1], ref ImageBuffer[2], ref ImageWidth[2],
-                                                 ref ImageHeight[2], ref ImageBuffer[3], ref ImageWidth[3], ref ImageHeight[3]);
+            m_result = RealScanSDK.RS_Segment4(imageData, imageWidth, imageHeight, slapType, ref numOfFingers, ref slapInfoArray, ref ImageBuffer[0], ref ImageWidth[0],
+                                                ref ImageHeight[0], ref ImageBuffer[1], ref ImageWidth[1], ref ImageHeight[1], ref ImageBuffer[2], ref ImageWidth[2],
+                                                ref ImageHeight[2], ref ImageBuffer[3], ref ImageWidth[3], ref ImageHeight[3]);
 
             if (m_result != RealScanSDK.RS_SUCCESS)
             {
@@ -801,14 +677,6 @@ namespace RealScanUICSharp
             StopCapture.Enabled = false;
         }
 
-        public Image byteArrayToImage(byte[] byteArrayIn)
-        {
-            MemoryStream ms = new MemoryStream(byteArrayIn);
-            Image returnImage = Image.FromStream(ms);
-            return returnImage;
-        }
-
-
 
         private void DoautoCapture()
         {
@@ -869,26 +737,26 @@ namespace RealScanUICSharp
         {
             if ((CallbackSelectedIndex == (int)callbackMode.saveNseg))
             {
-                
-                    int numOfFingers = 0;
-                    IntPtr[] ImageBuffer = new IntPtr[4];
-                    int[] ImageWidth = new int[4];
-                    int[] ImageHeight = new int[4];
-                    RSSlapInfoArray slapInfoA = new RSSlapInfoArray();
 
-                    SegmentCaptureProcess(capturedImageData, capturedImageWidth, capturedImageHeight, deviceHandle, ref slapInfoA, ref numOfFingers, ref ImageBuffer, ref ImageWidth, ref ImageHeight);
+                int numOfFingers = 0;
+                IntPtr[] ImageBuffer = new IntPtr[4];
+                int[] ImageWidth = new int[4];
+                int[] ImageHeight = new int[4];
+                RSSlapInfoArray slapInfoA = new RSSlapInfoArray();
 
-                    if (CallbackSelectedIndex == (int)callbackMode.saveNseg)
+                SegmentCaptureProcess(capturedImageData, capturedImageWidth, capturedImageHeight, deviceHandle, ref slapInfoA, ref numOfFingers, ref ImageBuffer, ref ImageWidth, ref ImageHeight);
+
+                if (CallbackSelectedIndex == (int)callbackMode.saveNseg)
+                {
+                    SegmentSaveImageCaptureProcess(capturedImageData, capturedImageWidth, capturedImageHeight, numOfFingers, slapInfoA, ImageBuffer, ImageWidth, ImageHeight);
+                }
+                for (int i = 0; i < 4; i++)
+                {
+                    if (ImageBuffer[i] != (IntPtr)0)
                     {
-                        SegmentSaveImageCaptureProcess(capturedImageData, capturedImageWidth, capturedImageHeight, numOfFingers, slapInfoA, ImageBuffer, ImageWidth, ImageHeight);
+                        RealScanSDK.RS_FreeImageData(ImageBuffer[i]);
                     }
-                    for (int i = 0; i < 4; i++)
-                    {
-                        if (ImageBuffer[i] != (IntPtr)0)
-                        {
-                            RealScanSDK.RS_FreeImageData(ImageBuffer[i]);
-                        }
-                    }
+                }
             }
 
             if (capturedImageData != (IntPtr)0)
@@ -907,51 +775,6 @@ namespace RealScanUICSharp
             {
                 RealScanSDK.RS_GetErrString(m_result, ref m_errorMsg);
                 MsgPanel.Text = m_errorMsg;
-            }
-        }
-
-        private void DisplayLCD()
-        {
-            Stream temp;
-            OpenFileDialog openDialog = new OpenFileDialog();
-            byte[] inputImage = new byte[RealScanSDK.RS_LCD_WIDTH_MAX * RealScanSDK.RS_LCD_HEIGHT_MAX];
-            IntPtr outputImage = (IntPtr)0;
-
-            openDialog.InitialDirectory = "c:\\";
-            openDialog.Filter = "r08 files (*.r08)|*.r08";
-            openDialog.FilterIndex = 1;
-            openDialog.RestoreDirectory = true;
-
-            if (openDialog.ShowDialog() == DialogResult.OK)
-            {
-                temp = openDialog.OpenFile();
-                if (temp != null)
-                {
-                    temp.Read(inputImage, 0, RealScanSDK.RS_LCD_WIDTH_MAX * RealScanSDK.RS_LCD_HEIGHT_MAX);
-
-                    m_errorcode = RealScanSDK.RS_MakeLCDData(inputImage, inputImage, inputImage, RealScanSDK.RS_LCD_WIDTH_MAX, RealScanSDK.RS_LCD_HEIGHT_MAX, ref outputImage);
-                    if (m_result == RealScanSDK.RS_SUCCESS)
-                    {
-                        m_result = RealScanSDK.RS_DisplayLCD(deviceHandle, outputImage, RealScanSDK.RS_LCD_DATA_SIZE_MAX, 0, 0,
-                                                             RealScanSDK.RS_LCD_WIDTH_MAX, RealScanSDK.RS_LCD_HEIGHT_MAX);
-
-                        if (m_result == RealScanSDK.RS_SUCCESS)
-                        {
-                            MsgPanel.Text = "Display LCD is successfully done!!";
-                        }
-                        else
-                        {
-                            RealScanSDK.RS_GetErrString(m_result, ref m_errorMsg);
-                            MsgPanel.Text = m_errorMsg;
-                        }
-                    }
-                    else
-                    {
-                        RealScanSDK.RS_GetErrString(m_result, ref m_errorMsg);
-                        MsgPanel.Text = m_errorMsg;
-                    }
-                    temp.Close();
-                }
             }
         }
 
@@ -1022,10 +845,20 @@ namespace RealScanUICSharp
             }
         }
 
+        private void ModeLEDOff()
+        {
+            m_result = RealScanSDK.RS_SetModeLED(deviceHandle, RealScanSDK.RS_LED_OFF, false);
+            if (m_result != RealScanSDK.RS_SUCCESS)
+            {
+                RealScanSDK.RS_GetErrString(m_result, ref m_errorMsg);
+                MsgPanel.Text = m_errorMsg;
+            }
+        }
+
         public void log(string msg)
         {
             CheckForIllegalCrossThreadCalls = false;
-        }   
+        }
     }
 }
 
