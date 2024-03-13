@@ -178,11 +178,35 @@
   <data name="&gt;&gt;PreviewWindow.ZOrder" xml:space="preserve">
     <value>4</value>
   </data>
+  <data name="TakeManual.Location" type="System.Drawing.Point, System.Drawing">
+    <value>15, 102</value>
+  </data>
+  <data name="TakeManual.Size" type="System.Drawing.Size, System.Drawing">
+    <value>220, 38</value>
+  </data>
+  <data name="TakeManual.TabIndex" type="System.Int32, mscorlib">
+    <value>9</value>
+  </data>
+  <data name="TakeManual.Text" xml:space="preserve">
+    <value>Tomar Captura</value>
+  </data>
+  <data name="&gt;&gt;TakeManual.Name" xml:space="preserve">
+    <value>TakeManual</value>
+  </data>
+  <data name="&gt;&gt;TakeManual.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;TakeManual.Parent" xml:space="preserve">
+    <value>groupCapture</value>
+  </data>
+  <data name="&gt;&gt;TakeManual.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
   <data name="StopCapture.Enabled" type="System.Boolean, mscorlib">
     <value>False</value>
   </data>
   <data name="StopCapture.Location" type="System.Drawing.Point, System.Drawing">
-    <value>128, 71</value>
+    <value>128, 53</value>
   </data>
   <data name="StopCapture.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
     <value>3, 4, 3, 4</value>
@@ -206,13 +230,13 @@
     <value>groupCapture</value>
   </data>
   <data name="&gt;&gt;StopCapture.ZOrder" xml:space="preserve">
-    <value>0</value>
+    <value>1</value>
   </data>
   <data name="StartCapture.Enabled" type="System.Boolean, mscorlib">
     <value>False</value>
   </data>
   <data name="StartCapture.Location" type="System.Drawing.Point, System.Drawing">
-    <value>15, 71</value>
+    <value>15, 53</value>
   </data>
   <data name="StartCapture.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
     <value>3, 4, 3, 4</value>
@@ -236,7 +260,7 @@
     <value>groupCapture</value>
   </data>
   <data name="&gt;&gt;StartCapture.ZOrder" xml:space="preserve">
-    <value>1</value>
+    <value>2</value>
   </data>
   <data name="CaptureMode.Items" xml:space="preserve">
     <value>Seleccione el modo de captura</value>
@@ -272,7 +296,7 @@
     <value>groupCapture</value>
   </data>
   <data name="&gt;&gt;CaptureMode.ZOrder" xml:space="preserve">
-    <value>2</value>
+    <value>3</value>
   </data>
   <data name="groupCapture.Location" type="System.Drawing.Point, System.Drawing">
     <value>504, 131</value>
@@ -284,7 +308,7 @@
     <value>3, 4, 3, 4</value>
   </data>
   <data name="groupCapture.Size" type="System.Drawing.Size, System.Drawing">
-    <value>241, 147</value>
+    <value>241, 153</value>
   </data>
   <data name="groupCapture.TabIndex" type="System.Int32, mscorlib">
     <value>4</value>
@@ -328,30 +352,6 @@
   <data name="&gt;&gt;callbackDrawBtn.Type" xml:space="preserve">
     <value>System.Windows.Forms.RadioButton, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
-  <data name="rightFingers.Items" xml:space="preserve">
-    <value>Meñique Derecho</value>
-  </data>
-  <data name="rightFingers.Items1" xml:space="preserve">
-    <value>Anular Derecho</value>
-  </data>
-  <data name="rightFingers.Items2" xml:space="preserve">
-    <value>Medio Derecho</value>
-  </data>
-  <data name="rightFingers.Items3" xml:space="preserve">
-    <value>Índice Derecho</value>
-  </data>
-  <data name="rightFingers.Location" type="System.Drawing.Point, System.Drawing">
-    <value>15, 153</value>
-  </data>
-  <data name="rightFingers.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>3, 4, 3, 4</value>
-  </data>
-  <data name="rightFingers.Size" type="System.Drawing.Size, System.Drawing">
-    <value>220, 76</value>
-  </data>
-  <data name="rightFingers.TabIndex" type="System.Int32, mscorlib">
-    <value>3</value>
-  </data>
   <data name="&gt;&gt;rightFingers.Name" xml:space="preserve">
     <value>rightFingers</value>
   </data>
@@ -363,30 +363,6 @@
   </data>
   <data name="&gt;&gt;rightFingers.ZOrder" xml:space="preserve">
     <value>0</value>
-  </data>
-  <data name="leftFingers.Items" xml:space="preserve">
-    <value>Meñique Izquierdo</value>
-  </data>
-  <data name="leftFingers.Items1" xml:space="preserve">
-    <value>Anular Izquierdo</value>
-  </data>
-  <data name="leftFingers.Items2" xml:space="preserve">
-    <value>Medio Izquierdo</value>
-  </data>
-  <data name="leftFingers.Items3" xml:space="preserve">
-    <value>Índice Izquierdo</value>
-  </data>
-  <data name="leftFingers.Location" type="System.Drawing.Point, System.Drawing">
-    <value>15, 34</value>
-  </data>
-  <data name="leftFingers.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>3, 4, 3, 4</value>
-  </data>
-  <data name="leftFingers.Size" type="System.Drawing.Size, System.Drawing">
-    <value>220, 76</value>
-  </data>
-  <data name="leftFingers.TabIndex" type="System.Int32, mscorlib">
-    <value>2</value>
   </data>
   <data name="&gt;&gt;leftFingers.Name" xml:space="preserve">
     <value>leftFingers</value>
@@ -423,6 +399,78 @@
   </data>
   <data name="&gt;&gt;missinFingers.ZOrder" xml:space="preserve">
     <value>2</value>
+  </data>
+  <data name="rightFingers.Items" xml:space="preserve">
+    <value>Meñique Derecho</value>
+  </data>
+  <data name="rightFingers.Items1" xml:space="preserve">
+    <value>Anular Derecho</value>
+  </data>
+  <data name="rightFingers.Items2" xml:space="preserve">
+    <value>Medio Derecho</value>
+  </data>
+  <data name="rightFingers.Items3" xml:space="preserve">
+    <value>Indice Derecho</value>
+  </data>
+  <data name="rightFingers.Location" type="System.Drawing.Point, System.Drawing">
+    <value>15, 153</value>
+  </data>
+  <data name="rightFingers.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
+    <value>3, 4, 3, 4</value>
+  </data>
+  <data name="rightFingers.Size" type="System.Drawing.Size, System.Drawing">
+    <value>220, 76</value>
+  </data>
+  <data name="rightFingers.TabIndex" type="System.Int32, mscorlib">
+    <value>3</value>
+  </data>
+  <data name="&gt;&gt;rightFingers.Name" xml:space="preserve">
+    <value>rightFingers</value>
+  </data>
+  <data name="&gt;&gt;rightFingers.Type" xml:space="preserve">
+    <value>System.Windows.Forms.CheckedListBox, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;rightFingers.Parent" xml:space="preserve">
+    <value>missinFingers</value>
+  </data>
+  <data name="&gt;&gt;rightFingers.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="leftFingers.Items" xml:space="preserve">
+    <value>Meñique Izquierdo</value>
+  </data>
+  <data name="leftFingers.Items1" xml:space="preserve">
+    <value>Anular Izquierdo</value>
+  </data>
+  <data name="leftFingers.Items2" xml:space="preserve">
+    <value>Medio Izquierdo</value>
+  </data>
+  <data name="leftFingers.Items3" xml:space="preserve">
+    <value>Indice Izquierdo</value>
+  </data>
+  <data name="leftFingers.Location" type="System.Drawing.Point, System.Drawing">
+    <value>15, 34</value>
+  </data>
+  <data name="leftFingers.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
+    <value>3, 4, 3, 4</value>
+  </data>
+  <data name="leftFingers.Size" type="System.Drawing.Size, System.Drawing">
+    <value>220, 76</value>
+  </data>
+  <data name="leftFingers.TabIndex" type="System.Int32, mscorlib">
+    <value>2</value>
+  </data>
+  <data name="&gt;&gt;leftFingers.Name" xml:space="preserve">
+    <value>leftFingers</value>
+  </data>
+  <data name="&gt;&gt;leftFingers.Type" xml:space="preserve">
+    <value>System.Windows.Forms.CheckedListBox, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;leftFingers.Parent" xml:space="preserve">
+    <value>missinFingers</value>
+  </data>
+  <data name="&gt;&gt;leftFingers.ZOrder" xml:space="preserve">
+    <value>1</value>
   </data>
   <data name="label2.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>

@@ -1,5 +1,7 @@
-﻿using RealScan;
+﻿using Newtonsoft.Json;
+using RealScan;
 using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Runtime.InteropServices;
@@ -142,9 +144,11 @@ namespace RealScanUICSharp
         {
             InitSDKAndDevice();
         }
+
         private void StartWebSocketServer()
         {
-            Task.Run(() => new WebSocketServerMain(this));
+            webSocketServer = new WebSocketServerMain(this);
+            Task.Run(() => webSocketServer.Start());
         }
 
         private void Init_SDK()
@@ -318,6 +322,40 @@ namespace RealScanUICSharp
             }
         }
 
+        public void MarkCheckMissingFinger(MissingFingers missingFingers)
+        {
+            for (int i = 0; i < leftFingers.Items.Count; i++)
+            {
+                leftFingers.SetItemChecked(i, false);
+            }
+            for (int i = 0; i < rightFingers.Items.Count; i++)
+            {
+                rightFingers.SetItemChecked(i, false);
+            }
+
+            if (missingFingers.LeftFinger != null)
+            {
+                foreach (var index in missingFingers.LeftFinger)
+                {
+                    if (index >= 0 && index < leftFingers.Items.Count)
+                    {
+                        leftFingers.SetItemChecked(index, true);
+                    }
+                }
+            }
+
+            if (missingFingers.RightFinger != null)
+            {
+                foreach (var index in missingFingers.RightFinger)
+                {
+                    if (index >= 0 && index < rightFingers.Items.Count)
+                    {
+                        rightFingers.SetItemChecked(index, true);
+                    }
+                }
+            }
+        }
+
         private void CaptureMode_SelectedIndexChanged(object sender, EventArgs e)
         {
             int[] tmpCaptureModes = new int[4] {
@@ -333,6 +371,35 @@ namespace RealScanUICSharp
                 {
                     m_captureMode = tmpCaptureModes[i];
                     break;
+                }
+            }
+
+            if (m_captureMode == RealScanSDK.RS_CAPTURE_DISABLED)
+            {
+                MsgPanel.Text = "Por favor, seleccione un modo de captura.";
+                StartCapture.Enabled = false;
+                return;
+            }
+            else
+            {
+                switch (m_captureMode)
+                {
+                    case RealScanSDK.RS_CAPTURE_FLAT_LEFT_FOUR_FINGERS:
+                        MsgPanel.Text = "4 Dedos de Mano Izquierda seleccionados.";
+                        StartCapture.Enabled = true;
+                        break;
+                    case RealScanSDK.RS_CAPTURE_FLAT_RIGHT_FOUR_FINGERS:
+                        MsgPanel.Text = "4 Dedos de Mano Derecha seleccionados.";
+                        StartCapture.Enabled = true;
+                        break;
+                    case RealScanSDK.RS_CAPTURE_FLAT_TWO_FINGERS:
+                        MsgPanel.Text = "2 Dedos Pulgares seleccionados.";
+                        StartCapture.Enabled = true;
+                        break;
+                    default:
+                        MsgPanel.Text = "Por favor, seleccione un modo de captura.";
+                        StartCapture.Enabled = false;
+                        break;
                 }
             }
 
@@ -445,48 +512,55 @@ namespace RealScanUICSharp
 
         private void SegmentSaveImageCaptureProcess(IntPtr imageData, int imageWidth, int imageHeight, int numOfFingers, RSSlapInfoArray slapInfo, IntPtr[] ImageBuffer, int[] ImageWidth, int[] ImageHeight)
         {
+            BlobsImages blobsImages = new BlobsImages() { Blobs = new Dictionary<string, ImageBlob>() };
 
-            getBlobCapture(imageData, imageWidth, imageHeight, ref blob);
+            string mainBlobKey = "";
 
-            SaveFileDialog saveDialog = new SaveFileDialog();
-            saveDialog.InitialDirectory = ".:\\";
-            saveDialog.FilterIndex = 1;
-
-            if (saveDialog.ShowDialog() == DialogResult.OK)
+            switch (CaptureMode.SelectedIndex)
             {
-                RealScanSDK.RS_SaveBitmap(imageData, imageWidth, imageHeight, saveDialog.FileName + ".bmp");
-                if (m_result != RealScanSDK.RS_SUCCESS)
-                {
-                    RealScanSDK.RS_GetErrString(m_result, ref m_errorMsg);
-                    MsgPanel.Text = m_errorMsg;
-                }
-
-                // ConvertIntPtrToBase64String(ImageBuffer[0], ImageWidth[0], ImageHeight[0]);
-
-                for (int i = 0; i < numOfFingers; i++)
-                {
-
-
-                    RealScanSDK.RS_SaveBitmap(ImageBuffer[i], m_nCustomSegWidth, m_nCustomSegHeight, saveDialog.FileName + "_" + slapInfo.RSSlapInfoA[i].fingerType + ".bmp");
-
-                    RealScanSDK.RS_SaveBitmap(ImageBuffer[i], ImageWidth[i], ImageHeight[i], saveDialog.FileName + "_" + slapInfo.RSSlapInfoA[i].fingerType + ".bmp");
-                    if (m_result != RealScanSDK.RS_SUCCESS)
-                    {
-                        RealScanSDK.RS_GetErrString(m_result, ref m_errorMsg);
-                        MsgPanel.Text = m_errorMsg;
-                    }
-                }
+                case 1:
+                    mainBlobKey = "mano_izquierda";
+                    break;
+                case 2:
+                    mainBlobKey = "mano_derecha";
+                    break;
+                case 3:
+                    mainBlobKey = "pulgares";
+                    break;
+                default:
+                    break;
             }
-            ModeLEDOff();
-            saveDialog.Dispose();
+
+            blobsImages.Blobs.Add(mainBlobKey, new ImageBlob
+            {
+                ImageData = getBlobCapture(imageData, imageWidth, imageHeight),
+                ImageWidth = imageWidth,
+                ImageHeight = imageHeight
+            });
+
+
+            for (int i = 0; i < numOfFingers; i++)
+            {
+
+                string fingerKey = "dedo_" + slapInfo.RSSlapInfoA[i].fingerType;
+                blobsImages.Blobs.Add(fingerKey, new ImageBlob
+                {
+                    ImageData = getBlobCapture(ImageBuffer[i], ImageWidth[i], ImageHeight[i]),
+                    ImageWidth = ImageWidth[i],
+                    ImageHeight = ImageHeight[i]
+                });
+            }
+
+            string json = JsonConvert.SerializeObject(blobsImages.Blobs);
+            webSocketServer.SendMessageToLocalClient(json);
         }
 
-        private void getBlobCapture(IntPtr imageData, int imageWidth, int imageHeight, ref byte[] blob)
+        private byte[] getBlobCapture(IntPtr imageData, int imageWidth, int imageHeight)
         {
             int size = imageWidth * imageHeight;
             byte[] prevImageData = new byte[size];
             Marshal.Copy(imageData, prevImageData, 0, imageWidth * imageHeight);
-            blob = prevImageData;
+            return prevImageData;
         }
 
         private void SegmentCaptureProcess(IntPtr imageData, int imageWidth, int imageHeight, int deviceHandle, ref RSSlapInfoArray slapInfo,
@@ -530,15 +604,6 @@ namespace RealScanUICSharp
                 MsgPanel.Text = m_errorMsg;
             }
 
-            for (int i = 0; i < leftFingers.Items.Count; i++)
-            {
-                if (leftFingers.GetItemChecked(i))
-                {
-                    AllocateConsole();
-                    Console.WriteLine($"Ítem en índice {i} está marcado.");
-                }
-            }
-
             switch (captureMode)
             {
                 case RealScanSDK.RS_CAPTURE_FLAT_TWO_FINGERS:
@@ -549,7 +614,9 @@ namespace RealScanUICSharp
                     for (int i = 0; i < 4; i++)
                     {
                         if (leftFingers.GetItemChecked(i))
+                        {
                             missingFingerArray[n++] = RealScanSDK.RS_FGP_LEFT_LITTLE - i;
+                        }
                     }
                     fingerType = RealScanSDK.RS_FGP_LEFT_LITTLE;
                     break;
@@ -557,7 +624,7 @@ namespace RealScanUICSharp
                     slapType = RealScanSDK.RS_SLAP_RIGHT_FOUR;
                     for (int i = 0; i < 4; i++)
                     {
-                        if (rightFingers.GetItemChecked(i))
+                       if (rightFingers.GetItemChecked(i))
                             missingFingerArray[n++] = i + RealScanSDK.RS_FGP_RIGHT_INDEX;
                     }
                     fingerType = RealScanSDK.RS_FGP_RIGHT_INDEX;
@@ -587,12 +654,14 @@ namespace RealScanUICSharp
 
             int overlayHandle = -1;
             int j = 0;
+
             for (int i = 0; i < numOfFingers; i++)
             {
                 if (slapInfoA.RSSlapInfoA[i].fingerType == RealScanSDK.RS_FGP_UNKNOWN)
                 {
                     if (slapType == RealScanSDK.RS_SLAP_LEFT_FOUR)
                     {
+                        
                         while (fingerType == missingFingerArray[j])
                         {
                             fingerType--;
@@ -680,61 +749,84 @@ namespace RealScanUICSharp
 
         private void DoautoCapture()
         {
-            m_result = RealScanSDK.RS_RemoveAllOverlay(deviceHandle);
+            const int maxRetries = 3;
+            int retryCount = 0;
+            bool captureSuccess = false;
 
-            if (m_result != RealScanSDK.RS_SUCCESS)
+            while (!captureSuccess && retryCount < maxRetries)
             {
-                if (MsgPanel.InvokeRequired)
+                m_result = RealScanSDK.RS_RemoveAllOverlay(deviceHandle);
+
+                if (m_result != RealScanSDK.RS_SUCCESS)
                 {
-                    afterAutoCaptureCallback callback = new afterAutoCaptureCallback(captureProcess);
-                    try
-                    {
-                        this.Invoke(callback, m_result);
-                    }
-                    catch
-                    {
-                    }
+                    ShowMessageToUser("Error al remover overlays. Por favor, reinicie el dispositivo y vuelva a intentarlo.");
+                    break;
+                }
+
+                m_result = RealScanSDK.RS_TakeImageData(deviceHandle, 10000, ref capturedImageData, ref capturedImageWidth, ref capturedImageHeight);
+
+                if (m_result == RealScanSDK.RS_SUCCESS)
+                {
+                    captureSuccess = true;
+                }
+                else if (m_result == RealScanSDK.RS_ERR_SENSOR_DIRTY)
+                {
+                    ShowMessageToUser("El sensor está sucio. Por favor, límpielo antes de intentar nuevamente.");
+                    break;
+                }
+                else if (m_result == RealScanSDK.RS_ERR_FINGER_EXIST)
+                {
+                    ShowMessageToUser("Por favor, retire su dedo del sensor antes de intentar la captura nuevamente.");
+                    break;
+                }
+                else if (m_result == RealScanSDK.RS_ERR_CAPTURE_ABORTED)
+                {
+                    ShowMessageToUser("Captura cancelada. Puede intentar de nuevo.");
+                    return;
                 }
                 else
                 {
-                    RealScanSDK.RS_GetErrString(m_result, ref m_errorMsg);
-                    MsgPanel.Text = m_errorMsg;
-                }
-                return;
-            }
-
-            m_result = RealScanSDK.RS_TakeImageData(deviceHandle, 10000, ref capturedImageData, ref capturedImageWidth, ref capturedImageHeight);
-
-            if (m_result != RealScanSDK.RS_SUCCESS)
-            {
-                if (capturedImageData != (IntPtr)0)
-                {
-                    RealScanSDK.RS_FreeImageData(capturedImageData);
+                    retryCount++;
+                    ShowMessageToUser($"Error en la captura. Reintentando... {retryCount}/{maxRetries}");
+                    Thread.Sleep(1000);
                 }
             }
 
-            if (MsgPanel.InvokeRequired)
+            if (captureSuccess)
             {
-                afterAutoCaptureCallback callback = new afterAutoCaptureCallback(captureProcess);
-
-                try
+                this.Invoke((MethodInvoker)delegate
                 {
-                    this.Invoke(callback, m_result);
-                }
-                catch
-                {
-                }
+                    captureProcess(m_result);
+                });
             }
             else
             {
-                RealScanSDK.RS_GetErrString(m_result, ref m_errorMsg);
-                MsgPanel.Text = m_errorMsg;
+                this.Invoke((MethodInvoker)delegate
+                {
+                    MsgPanel.Text = "No se pudo completar la captura. Intenta de nuevo.";
+                });
             }
-            return;
+        }
+
+
+        private void ShowMessageToUser(string message)
+        {
+            this.Invoke((MethodInvoker)delegate
+            {
+                MsgPanel.Text = message;
+            });
         }
 
         private void captureProcess(int captureResult)
         {
+            if (captureResult != RealScanSDK.RS_SUCCESS)
+            {
+                MsgPanel.Text = m_errorMsg + " Por favor, verifique el dispositivo y los dedos, luego intente de nuevo.";
+                StartCapture.Enabled = true;
+                StopCapture.Enabled = false;
+                return;
+            }
+
             if ((CallbackSelectedIndex == (int)callbackMode.saveNseg))
             {
 

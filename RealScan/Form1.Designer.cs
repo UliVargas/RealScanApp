@@ -60,7 +60,7 @@
             PreviewWindow.TabStop = false;
             // 
             // groupCapture
-            // 
+            //
             groupCapture.Controls.Add(StopCapture);
             groupCapture.Controls.Add(StartCapture);
             groupCapture.Controls.Add(CaptureMode);
@@ -104,15 +104,12 @@
             missinFingers.Controls.Add(leftFingers);
             resources.ApplyResources(missinFingers, "missinFingers");
             missinFingers.Name = "missinFingers";
+            missinFingers.TabStop = false;
             // 
             // rightFingers
             // 
             rightFingers.FormattingEnabled = true;
-            rightFingers.Items.Add("Meñique Derecho");
-            rightFingers.Items.Add("Anular Derecho");
-            rightFingers.Items.Add("Medio Derecho");
-            rightFingers.Items.Add("Índice Derecho");
-            rightFingers.Items.Add("Pulgar Derecho");
+            rightFingers.Items.AddRange(new object[] { resources.GetString("rightFingers.Items"), resources.GetString("rightFingers.Items1"), resources.GetString("rightFingers.Items2"), resources.GetString("rightFingers.Items3") });
             resources.ApplyResources(rightFingers, "rightFingers");
             rightFingers.Name = "rightFingers";
             // 
@@ -120,11 +117,7 @@
             // 
             leftFingers.BackColor = System.Drawing.SystemColors.Window;
             leftFingers.FormattingEnabled = true;
-            leftFingers.Items.Add("Meñique Izquierdo");
-            leftFingers.Items.Add("Anular Izquierdo");
-            leftFingers.Items.Add("Medio Izquierdo");
-            leftFingers.Items.Add("Índice Izquierdo");
-            leftFingers.Items.Add("Pulgar Izquierdo");
+            leftFingers.Items.AddRange(new object[] { resources.GetString("leftFingers.Items"), resources.GetString("leftFingers.Items1"), resources.GetString("leftFingers.Items2"), resources.GetString("leftFingers.Items3") });
             resources.ApplyResources(leftFingers, "leftFingers");
             leftFingers.Name = "leftFingers";
             // 

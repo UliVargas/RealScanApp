@@ -659,6 +659,11 @@ namespace RealScan
         public static extern int RS_SequenceCheck( int numOfFinger, ref IntPtr fingerImageData, ref int fingerImageWidth, ref int fingerImageHeight, 
 												IntPtr slapImageData, int slapImageWidth, int slapImageHeight, int slapType, ref int fingerSequenceInSlap, int securityLevel );
 
+        internal static int RS_StartCapture(int deviceHandle, object @checked, int v)
+        {
+            throw new NotImplementedException();
+        }
+
 
 
 
