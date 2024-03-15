@@ -120,6 +120,12 @@ public class WebSocketServerMain
         });
     }
 
+    public void Stop()
+    {
+        server.Dispose();
+        server = null;
+    }
+
     public void SendMessageToLocalClient(string message)
     {
         if (localSocket == null)

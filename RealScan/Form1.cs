@@ -52,8 +52,7 @@ namespace RealScanUICSharp
 
         enum callbackMode
         {
-            saveNseg,
-            // seqCheck
+            saveNseg
         }
 
         private PrevMode _selectedPrevMode;
@@ -95,6 +94,8 @@ namespace RealScanUICSharp
 
         public int DeviceListSelectedIndex = -1;
 
+        private bool cerrarAplicacion = false;
+
         [DllImport("kernel32.dll")]
         public static extern bool AllocConsole();
 
@@ -114,11 +115,32 @@ namespace RealScanUICSharp
         }
 
         WebSocketServerMain webSocketServer;
+        private NotifyIcon trayIcon;
 
         public MainForm()
         {
             InitializeComponent();
             StartWebSocketServer();
+            trayIcon = new NotifyIcon()
+            {
+                Icon = Icon = new Icon("./FGEBC.ico"),
+                Visible = true
+            };
+
+            // Manejar el evento de doble clic en el icono de la bandeja
+            trayIcon.DoubleClick += (sender, e) =>
+            {
+                Show();
+                WindowState = FormWindowState.Normal;
+            };
+
+            ContextMenuStrip trayMenu = new ContextMenuStrip();
+            trayMenu.Items.Add("Abrir", null, this.Open_Click);
+            trayMenu.Items.Add("Cerrar", null, this.Close_Click);
+
+            // Asignar ContextMenuStrip al NotifyIcon
+            trayIcon.ContextMenuStrip = trayMenu;
+
             this.Text = "Escaner Fiscalia Web";
             Icon icon = Icon.ExtractAssociatedIcon("fgebc.ico");
             this.Icon = icon;
@@ -138,6 +160,42 @@ namespace RealScanUICSharp
             AutoScroll = true;
 
             previewCallback = new RSPreviewDataCallback(previewDataCallback);
+        }
+
+        private void Open_Click(object sender, EventArgs e)
+        {
+            Show();
+            WindowState = FormWindowState.Normal;
+        }
+
+        private void Close_Click(object sender, EventArgs e)
+        {
+            cerrarAplicacion = true;
+            Application.Exit();
+        }
+
+        protected override void OnFormClosing(FormClosingEventArgs e)
+        {
+            if (!cerrarAplicacion)
+            {
+                e.Cancel = true;
+                Hide();
+            }
+            else
+            {
+                if (autoCaptureThread != null && autoCaptureThread.IsAlive)
+                {
+                    autoCaptureThread.Interrupt();
+                }
+
+                if (webSocketServer != null)
+                {
+                    webSocketServer.Stop();
+                }
+                Exit_Device();
+            }
+
+            base.OnFormClosing(e);
         }
 
         private void MainForm_Load(object sender, EventArgs e)
