@@ -2,6 +2,7 @@
 using RealScan;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Runtime.InteropServices;
@@ -597,28 +598,44 @@ namespace RealScanUICSharp
             });
 
 
-            for (int i = 0; i < numOfFingers; i++)
-            {
-
-                string fingerKey = "dedo_" + slapInfo.RSSlapInfoA[i].fingerType;
-                blobsImages.Blobs.Add(fingerKey, new ImageBlob
+           
+            if (numOfFingers > 2) {
+                for (int i = 0; i < numOfFingers; i++)
                 {
-                    ImageData = getBlobCapture(ImageBuffer[i], ImageWidth[i], ImageHeight[i]),
-                    ImageWidth = ImageWidth[i],
-                    ImageHeight = ImageHeight[i]
+                    string fingerKey = "dedo_" + slapInfo.RSSlapInfoA[i].fingerType;
+                    blobsImages.Blobs.Add(fingerKey, new ImageBlob
+                    {
+                        ImageData = getBlobCapture(ImageBuffer[i], ImageWidth[i], ImageHeight[i]),
+                        ImageWidth = ImageWidth[i],
+                        ImageHeight = ImageHeight[i]
+                    });
+                }
+            } else
+            {
+                blobsImages.Blobs.Add("dedo_1", new ImageBlob
+                {
+                    ImageData = getBlobCapture(ImageBuffer[0], ImageWidth[0], ImageHeight[0]),
+                    ImageWidth = ImageWidth[0],
+                    ImageHeight = ImageHeight[0]
                 });
             }
+           
 
             string json = JsonConvert.SerializeObject(blobsImages.Blobs);
+
+   
             webSocketServer.SendMessageToLocalClient(json);
         }
 
-        private byte[] getBlobCapture(IntPtr imageData, int imageWidth, int imageHeight)
+        private int[] getBlobCapture(IntPtr imageData, int imageWidth, int imageHeight)
         {
             int size = imageWidth * imageHeight;
             byte[] prevImageData = new byte[size];
+            int[] imageInt = new int[size];
             Marshal.Copy(imageData, prevImageData, 0, imageWidth * imageHeight);
-            return prevImageData;
+            imageInt = Array.ConvertAll(prevImageData, Convert.ToInt32);
+
+            return imageInt;
         }
 
         private void SegmentCaptureProcess(IntPtr imageData, int imageWidth, int imageHeight, int deviceHandle, ref RSSlapInfoArray slapInfo,

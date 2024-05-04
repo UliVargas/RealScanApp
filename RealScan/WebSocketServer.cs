@@ -21,7 +21,7 @@ public class MissingFingers
 
 public class ImageBlob
 {
-    public byte[] ImageData { get; set; }
+    public int[] ImageData { get; set; }
     public int ImageWidth { get; set; }
     public int ImageHeight { get; set; }
 }

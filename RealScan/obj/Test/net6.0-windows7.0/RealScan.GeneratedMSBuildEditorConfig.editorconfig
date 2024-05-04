@@ -14,6 +14,6 @@ build_property.PlatformNeutralAssembly =
 build_property.EnforceExtendedAnalyzerRules = 
 build_property._SupportedPlatformList = Linux,macOS,Windows
 build_property.RootNamespace = RealScan
-build_property.ProjectDir = C:\Users\YoContigo\Desktop\RealScanExample\RealScanExample_CSharp\
+build_property.ProjectDir = C:\Users\YoContigo\Desktop\RealScan\RealScan\
 build_property.EnableComHosting = 
 build_property.EnableGeneratedComInterfaceComImportInterop = 
